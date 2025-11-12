@@ -2,13 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import type { Student, ClassRoom } from "../../types";
 import { Plus, Edit, Trash2, Users } from "lucide-react";
+import toast from "react-hot-toast";
 import { getStudents, deleteStudent, getClasses } from "../../api/cliente";
+import ConfirmModal from "../../components/ConfirmModal";
+import Spinner from "../../components/Spinner";
 
 export default function StudentsList() {
   const nav = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassRoom[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<Student['id'] | null>(
+    null
+  );
 
   useEffect(() => {
     async function loadData() {
@@ -22,7 +29,7 @@ export default function StudentsList() {
         setClasses(classesData || []);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
-        alert("Erro ao carregar dados");
+        toast.error("Erro ao carregar os dados.");
       } finally {
         setLoading(false);
       }
@@ -35,21 +42,36 @@ export default function StudentsList() {
     return classRoom?.name || "N/A";
   };
 
-  const handleDelete = async (id: Student["id"]) => {
-    if (!window.confirm("Tem certeza que deseja excluir este aluno?")) return;
+  const handleDeleteRequest = (id: Student["id"]) => {
+    setStudentToDelete(id);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!studentToDelete) return;
     try {
-      await deleteStudent(id);
+      await deleteStudent(studentToDelete);
       setStudents((s) =>
-        s.filter((student) => String(student.id) !== String(id))
+        s.filter((student) => String(student.id) !== String(studentToDelete))
       );
+      toast.success("Aluno excluído com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir aluno:", error);
-      alert("Erro ao excluir aluno");
+      toast.error("Erro ao excluir o aluno.");
     }
   };
 
   return (
-    <div className="page-container">
+    <>
+      <ConfirmModal
+        isOpen={isModalOpen}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir este aluno? Esta ação não pode ser desfeita."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsModalOpen(false)}
+      />
+
+      <div className="page-container">
       <div className="page-header">
         <h1 className="page-title">Alunos</h1>
         <button onClick={() => nav("/students/new")} className="btn">
@@ -59,7 +81,7 @@ export default function StudentsList() {
       </div>
 
       {loading ? (
-        <p>Carregando...</p>
+        <Spinner />
       ) : students.length === 0 ? (
         <div style={{ textAlign: "center", padding: "3rem 0" }}>
           <Users size={48} color="#9ca3af" />
@@ -91,7 +113,7 @@ export default function StudentsList() {
                         <Edit size={20} />
                       </Link>
                       <button
-                        onClick={() => handleDelete(student.id)}
+                        onClick={() => handleDeleteRequest(student.id)}
                         title="Excluir"
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc3545' }}
                       >
@@ -105,6 +127,7 @@ export default function StudentsList() {
           </table>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

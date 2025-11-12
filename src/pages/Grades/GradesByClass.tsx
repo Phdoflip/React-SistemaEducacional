@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Student, ClassRoom, Grade } from "../../types";
-import { ArrowLeft, BookUser, LoaderCircle } from "lucide-react";
+import { ArrowLeft, BookUser, LoaderCircle, Save } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   getClass,
   getStudents,
@@ -9,6 +10,7 @@ import {
   createGrade,
   updateGrade,
 } from "../../api/cliente";
+import Spinner from "../../components/Spinner";
 
 type StudentGrade = Student & { grade?: Grade };
 
@@ -18,6 +20,7 @@ export default function GradesByClass() {
   const [classRoom, setClassRoom] = useState<ClassRoom | null>(null);
   const [students, setStudents] = useState<StudentGrade[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialStudents, setInitialStudents] = useState<StudentGrade[]>([]); // Para comparar mudanças
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -51,9 +54,10 @@ export default function GradesByClass() {
         }));
 
         setStudents(studentsWithGrades);
+        setInitialStudents(JSON.parse(JSON.stringify(studentsWithGrades))); // Cópia profunda para estado inicial
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
-        alert("Erro ao carregar dados");
+        toast.error("Erro ao carregar os dados da turma.");
       } finally {
         setLoading(false);
       }
@@ -61,42 +65,63 @@ export default function GradesByClass() {
     loadData();
   }, [classId, nav]);
 
-  const handleGradeChange = async (
+  const handleGradeChange = (
     studentId: Student["id"],
     field: "prova" | "trabalho",
     value: string
   ) => {
     const numValue = Number(value) || 0;
-    if (numValue < 0 || numValue > 10) return;
+    if (numValue < 0 || numValue > 10) {
+      toast.error("A nota deve ser entre 0 e 10.");
+      return;
+    }
+
+    setStudents((current) =>
+      current.map((s) => {
+        if (String(s.id) !== String(studentId)) return s;
+
+        const updatedGrade = {
+          ...(s.grade || {}),
+          studentId,
+          classId,
+          [field]: value, // Armazena como string para o input
+        } as Grade;
+
+        return { ...s, grade: updatedGrade };
+      })
+    );
+  };
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    const promises: Promise<unknown>[] = [];
+
+    students.forEach((student, index) => {
+      const initialStudent = initialStudents[index];
+      const currentGrade = student.grade;
+      const initialGrade = initialStudent.grade;
+
+      // Salva apenas se a nota mudou
+      if (JSON.stringify(currentGrade) !== JSON.stringify(initialGrade)) {
+        if (currentGrade?.id) {
+          promises.push(updateGrade(currentGrade.id, currentGrade));
+        } else if (currentGrade) {
+          promises.push(createGrade(currentGrade));
+        }
+      }
+    });
 
     try {
-      setSaving(true);
-      const student = students.find((s) => String(s.id) === String(studentId));
-      if (!student) return;
-
-      const currentGrade = student.grade;
-      const updatedGrade = {
-        ...(currentGrade || {}),
-        studentId,
-        classId,
-        [field]: numValue,
-      } as Grade;
-
-      if (currentGrade?.id) {
-        await updateGrade(currentGrade.id, updatedGrade);
+      await Promise.all(promises);
+      if (promises.length > 0) {
+        toast.success("Notas salvas com sucesso!");
+        setInitialStudents(JSON.parse(JSON.stringify(students))); // Atualiza o estado inicial
       } else {
-        await createGrade(updatedGrade);
+        toast.success("Nenhuma alteração para salvar.");
       }
-
-      // Atualiza estado local
-      setStudents((current) =>
-        current.map((s) =>
-          String(s.id) === String(studentId) ? { ...s, grade: updatedGrade } : s
-        )
-      );
     } catch (error) {
-      console.error("Erro ao salvar nota:", error);
-      alert("Erro ao salvar nota");
+      console.error("Erro ao salvar notas:", error);
+      toast.error("Ocorreu um erro ao salvar as notas.");
     } finally {
       setSaving(false);
     }
@@ -129,7 +154,7 @@ export default function GradesByClass() {
       </div>
 
       {loading ? (
-        <p>Carregando...</p>
+        <Spinner />
       ) : students.length === 0 ? (
         <div style={{ textAlign: "center", padding: "3rem 0" }}>
           <BookUser size={48} color="#9ca3af" />
@@ -162,7 +187,7 @@ export default function GradesByClass() {
                       step="0.1"
                       value={student.grade?.prova || ""}
                       onChange={(e) => handleGradeChange(student.id, "prova", e.target.value)}
-                      disabled={saving}
+                      // disabled={saving} // Permite edição enquanto salva
                       className="form-input"
                       style={{ width: '80px' }}
                       placeholder="0.0"
@@ -176,7 +201,7 @@ export default function GradesByClass() {
                       step="0.1"
                       value={student.grade?.trabalho || ""}
                       onChange={(e) => handleGradeChange(student.id, "trabalho", e.target.value)}
-                      disabled={saving}
+                      // disabled={saving}
                       className="form-input"
                       style={{ width: '80px' }}
                       placeholder="0.0"
@@ -191,12 +216,11 @@ export default function GradesByClass() {
               )})}
             </tbody>
           </table>
-          {saving && (
-            <div className="saving-indicator">
-              <LoaderCircle size={16} className="animate-spin" />
-              Salvando...
-            </div>
-          )}
+          <div className="form-actions" style={{ marginTop: '2rem' }}>
+            <button onClick={handleSaveAll} disabled={saving} className="btn">
+              {saving ? <><LoaderCircle size={20} className="animate-spin" /> Salvando...</> : <><Save size={20} /> Salvar Alterações</>}
+            </button>
+          </div>
         </div>
       )}
     </div>

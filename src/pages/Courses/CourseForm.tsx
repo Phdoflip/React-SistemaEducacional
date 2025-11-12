@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Course } from "../../types";
 import { ArrowLeft, Save, LoaderCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import { getCourse, createCourse, updateCourse } from "../../api/cliente";
 
 export default function CourseForm() {
@@ -22,7 +23,7 @@ export default function CourseForm() {
         setForm(data);
       } catch (error) {
         console.error("Erro ao carregar curso:", error);
-        alert("Erro ao carregar curso");
+        toast.error("Erro ao carregar o curso.");
       }
     }
     loadCourse();
@@ -30,16 +31,20 @@ export default function CourseForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name) return alert("Nome é obrigatório");
+    if (!form.name) {
+      toast.error("O nome do curso é obrigatório.");
+      return;
+    }
 
     try {
       setSaving(true);
       if (editMode && id) await updateCourse(id, form);
       else await createCourse(form);
+      toast.success(`Curso ${editMode ? "atualizado" : "criado"} com sucesso!`);
       nav("/courses");
     } catch (error) {
       console.error("Erro ao salvar curso:", error);
-      alert("Erro ao salvar curso");
+      toast.error("Erro ao salvar o curso.");
     } finally {
       setSaving(false);
     }

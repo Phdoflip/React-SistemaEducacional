@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { ClassRoom, Course } from "../../types";
 import { ArrowLeft, Save, LoaderCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   getClass,
   createClass,
@@ -34,7 +35,7 @@ export default function ClassForm() {
         }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
-        alert("Erro ao carregar dados");
+        toast.error("Erro ao carregar os dados.");
       }
     }
     loadData();
@@ -42,17 +43,24 @@ export default function ClassForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name) return alert("Nome é obrigatório");
-    if (!form.courseId) return alert("Curso é obrigatório");
+    if (!form.name) {
+      toast.error("O nome da turma é obrigatório.");
+      return;
+    }
+    if (!form.courseId) {
+      toast.error("O curso é obrigatório.");
+      return;
+    }
 
     try {
       setSaving(true);
       if (editMode && id) await updateClass(id, form);
       else await createClass(form);
+      toast.success(`Turma ${editMode ? "atualizada" : "criada"} com sucesso!`);
       nav("/classes");
     } catch (error) {
       console.error("Erro ao salvar turma:", error);
-      alert("Erro ao salvar turma");
+      toast.error("Erro ao salvar a turma.");
     } finally {
       setSaving(false);
     }

@@ -2,12 +2,19 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import type { ClassRoom } from "../../types";
 import { Plus, Edit, Trash2, School } from "lucide-react";
+import toast from "react-hot-toast";
 import { getClasses, deleteClass } from "../../api/cliente";
+import ConfirmModal from "../../components/ConfirmModal";
+import Spinner from "../../components/Spinner";
 
 export default function ClassesList() {
   const nav = useNavigate();
   const [classes, setClasses] = useState<ClassRoom[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<ClassRoom['id'] | null>(
+    null
+  );
 
   useEffect(() => {
     async function loadClasses() {
@@ -17,6 +24,7 @@ export default function ClassesList() {
         setClasses(data || []);
       } catch (error) {
         console.error("Erro ao carregar turmas:", error);
+        toast.error("Erro ao carregar as turmas.");
       } finally {
         setLoading(false);
       }
@@ -24,18 +32,35 @@ export default function ClassesList() {
     loadClasses();
   }, []);
 
-  const handleDelete = async (id: ClassRoom["id"]) => {
-    if (!window.confirm("Tem certeza que deseja excluir esta turma?")) return;
+  const handleDeleteRequest = (id: ClassRoom["id"]) => {
+    setClassToDelete(id);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!classToDelete) return;
     try {
-      await deleteClass(id);
-      setClasses((cls) => cls.filter((c) => String(c.id) !== String(id)));
+      await deleteClass(classToDelete);
+      setClasses((cls) =>
+        cls.filter((c) => String(c.id) !== String(classToDelete))
+      );
+      toast.success("Turma excluída com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir turma:", error);
+      toast.error("Erro ao excluir a turma.");
     }
   };
 
   return (
-    <div className="page-container">
+    <>
+      <ConfirmModal
+        isOpen={isModalOpen}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir esta turma? Esta ação não pode ser desfeita."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setIsModalOpen(false)}
+      />
+      <div className="page-container">
       <div className="page-header">
         <h1 className="page-title">Turmas</h1>
         <button onClick={() => nav("/classes/new")} className="btn">
@@ -45,7 +70,7 @@ export default function ClassesList() {
       </div>
 
       {loading ? (
-        <p>Carregando...</p>
+        <Spinner />
       ) : classes.length === 0 ? (
         <div style={{ textAlign: "center", padding: "3rem 0" }}>
           <School size={48} color="#9ca3af" />
@@ -74,7 +99,7 @@ export default function ClassesList() {
                   <Link to={`/classes/${cls.id}/edit`} title="Editar">
                     <Edit size={20} />
                   </Link>
-                  <button onClick={() => handleDelete(cls.id)} title="Excluir" style={{background: 'none', border: 'none', cursor: 'pointer', color: '#dc3545'}}>
+                  <button onClick={() => handleDeleteRequest(cls.id)} title="Excluir" style={{background: 'none', border: 'none', cursor: 'pointer', color: '#dc3545'}}>
                     <Trash2 size={20} />
                   </button>
                 </div>
@@ -83,6 +108,7 @@ export default function ClassesList() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

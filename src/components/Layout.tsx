@@ -16,9 +16,11 @@ export default function Layout() {
 
           <nav className="header-nav">
             {[
+              { path: "/", label: "Dashboard" },
               { path: "/courses", label: "Cursos" },
               { path: "/classes", label: "Turmas" },
               { path: "/students", label: "Estudantes" },
+              { path: "/teachers", label: "Professores" },
               { path: "/grades", label: "Lançar Notas" },
             ].map(({ path, label }) => (
               <Link key={path} to={path} className={`nav-link ${isActive(path)}`}>

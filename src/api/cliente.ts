@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Course, ClassRoom, Student, Grade } from "../types";
+import type { Course, ClassRoom, Student, Grade, Teacher } from "../types";
 
 const API_BASE = "https://api-estudo-educacao-1.onrender.com";
 
@@ -51,6 +51,18 @@ export const updateStudent = (id: Student["id"], student: Partial<Student>) =>
   api.put<Student>(`/students/${id}`, student).then((r) => r.data);
 export const deleteStudent = (id: Student["id"]) =>
   api.delete(`/students/${id}`).then((r) => r.data);
+
+// Professores
+export const getTeachers = () =>
+  api.get<Teacher[]>("/teachers").then((r) => r.data);
+export const getTeacher = (id: Teacher["id"]) =>
+  api.get<Teacher>(`/teachers/${id}`).then((r) => r.data);
+export const createTeacher = (teacher: Partial<Teacher>) =>
+  api.post<Teacher>("/teachers", teacher).then((r) => r.data);
+export const updateTeacher = (id: Teacher["id"], teacher: Partial<Teacher>) =>
+  api.put<Teacher>(`/teachers/${id}`, teacher).then((r) => r.data);
+export const deleteTeacher = (id: Teacher["id"]) =>
+  api.delete(`/teachers/${id}`).then((r) => r.data);
 
 // Notas
 export const getGrades = () => api.get<Grade[]>("/grades").then((r) => r.data);

@@ -27,3 +27,9 @@ classId: number | string;
 prova: number;
 trabalho: number;
 }
+
+export interface Teacher {
+  id: number | string;
+  name: string;
+  email?: string;
+}
