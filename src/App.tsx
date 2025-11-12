@@ -7,6 +7,7 @@ import ClassForm from "./pages/Classes/ClassForm";
 import StudentsList from "./pages/Students/StudentsList";
 import StudentForm from "./pages/Students/StudentForm";
 import GradesByClass from "./pages/Grades/GradesByClass";
+import './App.css';
 
 function App() {
   return (
@@ -49,3 +50,4 @@ function App() {
 }
 
 export default App;
+

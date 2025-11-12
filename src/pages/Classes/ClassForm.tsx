@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { ClassRoom, Course } from "../../types";
+import { ArrowLeft, Save, LoaderCircle } from "lucide-react";
 import {
   getClass,
   createClass,
@@ -58,106 +59,64 @@ export default function ClassForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {editMode ? "Editar Turma" : "Nova Turma"}
-          </h1>
-          <button
-            type="button"
-            onClick={() => nav("/classes")}
-            className="text-gray-600 hover:text-gray-800 flex items-center gap-2"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Voltar
-          </button>
+    <div className="page-container" style={{ maxWidth: "700px", margin: "0 auto" }}>
+      <div className="page-header">
+        <h1 className="page-title">{editMode ? "Editar Turma" : "Nova Turma"}</h1>
+        <button type="button" onClick={() => nav("/classes")} className="btn btn-secondary">
+          <ArrowLeft size={20} />
+          Voltar
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="form-container">
+        <div className="form-group">
+          <label htmlFor="name" className="form-label">Nome da Turma</label>
+          <input
+            id="name"
+            type="text"
+            value={form.name || ""}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            className="form-input"
+            placeholder="Ex: 3º Ano - Matutino"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome da Turma
-            </label>
-            <input
-              type="text"
-              value={form.name || ""}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-              placeholder="Digite o nome da turma"
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="courseId" className="form-label">Curso</label>
+          <select
+            id="courseId"
+            value={form.courseId || ""}
+            onChange={(e) => setForm((f) => ({ ...f, courseId: e.target.value }))}
+            className="form-select"
+          >
+            <option value="">Selecione um curso</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.id}>
+                {course.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Curso
-            </label>
-            <select
-              value={form.courseId || ""}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, courseId: e.target.value }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-            >
-              <option value="">Selecione um curso</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              onClick={() => nav("/classes")}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Salvando...</span>
-                </>
-              ) : (
-                <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span>Salvar</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="form-actions">
+          <button type="button" onClick={() => nav("/classes")} className="btn btn-secondary">
+            Cancelar
+          </button>
+          <button type="submit" disabled={saving} className="btn">
+            {saving ? (
+              <>
+                <LoaderCircle size={20} className="animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save size={20} />
+                Salvar
+              </>
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
